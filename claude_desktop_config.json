@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "node",
+      "args": [
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/index.js",
+        "/Users/xuechenglong/Library/CloudStorage/GoogleDrive-alongor0512@gmail.com/我的云端硬盘/WPS+iMac/车险签单清单_2025年3月"
+      ],
+      "env": {
+        "NODE_PATH": "/Users/xuechenglong/Library/CloudStorage/GoogleDrive-alongor0512@gmail.com/我的云端硬盘/WPS+iMac/车险签单清单_2025年3月/node_modules"
+      }
+    },
+    "excel": {
+      "command": "node",
+      "args": ["node_modules/@negokaz/excel-mcp-server/dist/index.js"],
+      "env": {
+        "NODE_PATH": "/Users/xuechenglong/Library/CloudStorage/GoogleDrive-alongor0512@gmail.com/我的云端硬盘/WPS+iMac/车险签单清单_2025年3月/node_modules"
+      }
+    },
+    "excel-python": {
+      "command": "/Users/xuechenglong/Library/CloudStorage/GoogleDrive-alongor0512@gmail.com/我的云端硬盘/WPS+iMac/车险签单清单_2025年3月/.venv/bin/python",
+      "args": ["/Users/xuechenglong/Library/CloudStorage/GoogleDrive-alongor0512@gmail.com/我的云端硬盘/WPS+iMac/车险签单清单_2025年3月/excel_mcp_server.py"]
+    }
+  }
+}
