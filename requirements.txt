@@ -1,0 +1,6 @@
+flask==3.0.0
+flask-cors==4.0.0
+# 为兼容 Python 3.13/NumPy 2.x，升级 pandas 并显式指定 numpy
+numpy>=2.2,<3
+pandas>=2.2.3,<3
+openpyxl==3.1.2

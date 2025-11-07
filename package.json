@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "@modelcontextprotocol/server-filesystem": "^2025.8.21"
-  },
-  "dependencies": {
-    "@negokaz/excel-mcp-server": "^0.12.0"
-  }
-}
