@@ -10,7 +10,14 @@
       "Bash(dir:*)",
       "Bash(nul)",
       "Bash(pip show:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(bash:*)",
+      "Bash(python3:*)",
+      "Bash(./start_server.sh:*)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(npm init:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

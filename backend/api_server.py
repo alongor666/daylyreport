@@ -226,11 +226,12 @@ if __name__ == '__main__':
     # 设置输出编码为UTF-8
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
+    PORT = 5001  # macOS的AirPlay Receiver可能占用5000端口
     print("=" * 60)
     print("启动每日签单平台趋势分析API服务器")
     print("=" * 60)
-    print(f"访问地址: http://localhost:5000")
-    print(f"前端页面: http://localhost:5000/static/index.html")
+    print(f"访问地址: http://localhost:{PORT}")
+    print(f"前端页面: http://localhost:{PORT}/static/index.html")
     print("=" * 60)
     print("\n可用接口:")
     print("  POST /api/refresh          - 刷新数据(处理新Excel)")
@@ -240,4 +241,4 @@ if __name__ == '__main__':
     print("  GET  /api/health           - 健康检查")
     print("\n" + "=" * 60)
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=PORT, debug=True)
