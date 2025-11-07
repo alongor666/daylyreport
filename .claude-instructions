@@ -1,0 +1,30 @@
+# 🤖 Claude实例启动指令
+
+⚠️ **在开始任何开发工作前，请务必：**
+
+1. **阅读 [CLAUDE.md](CLAUDE.md)** - 这是你的工作指南，包含完整的开发规范
+2. **阅读 [docs/README_FOR_DEVELOPERS.md](docs/README_FOR_DEVELOPERS.md)** - 开发者快速上手指南
+3. **遵循文档中定义的技术栈和架构模式** - 不可随意改变
+
+## 关键原则
+
+- ✅ 使用 **Vue 3 + Vite + Pinia** 进行前端开发
+- ✅ 遵循 **CSS Variables + BEM** 命名规范
+- ✅ 使用 **Toast通知** 替代 `alert()`
+- ✅ 使用 **Pinia stores** 管理状态，禁止全局变量
+- ✅ 所有API调用通过 **services/api.js** 封装
+
+## 文档已完成
+
+本项目已完成v2.0全面升级的所有核心文档（约5000行），包括：
+- PRD.md - 产品需求文档
+- ARCHITECTURE.md - 架构设计文档
+- DESIGN_SYSTEM.md - 设计系统文档
+- MIGRATION_GUIDE.md - v1.0→v2.0迁移指南
+- CHANGELOG.md - 版本更新日志
+
+**请在开始编码前参考相关文档！**
+
+---
+
+📚 如有疑问，请查看 [docs/README_FOR_DEVELOPERS.md](docs/README_FOR_DEVELOPERS.md)
