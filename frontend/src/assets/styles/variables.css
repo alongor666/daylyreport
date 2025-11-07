@@ -1,0 +1,42 @@
+:root {
+  /* Primary palette */
+  --primary-50: #f3e8ff;
+  --primary-100: #e9d5ff;
+  --primary-500: #a855f7;
+  --primary-600: #9333ea;
+  --primary-700: #7e22ce;
+
+  /* Semantic colors */
+  --success-500: #10b981;
+  --warning-500: #f59e0b;
+  --error-500: #ef4444;
+
+  /* Neutral colors */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-300: #d1d5db;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-500);
+
+  /* Elevation */
+  --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+
+  /* Spacing */
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Typography */
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --font-family-base: 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
