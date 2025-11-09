@@ -101,9 +101,9 @@
     <!-- 可折叠筛选面板（默认收起） -->
     <transition name="panel-expand">
       <div v-if="isPanelOpen" class="global-filter__panel">
-        <!-- 1. 时间与口径 -->
+        <!-- 1. 时间 -->
         <section class="global-filter__section">
-          <h3 class="global-filter__section-title">时间与数据口径</h3>
+          <h3 class="global-filter__section-title">时间</h3>
           <div class="global-filter__section-content">
             <!-- 时间快捷键 -->
             <div class="global-filter__field global-filter__field--full">
@@ -122,20 +122,6 @@
                   {{ period.label }}
                 </button>
               </div>
-            </div>
-
-            <!-- 数据口径 -->
-            <div class="global-filter__field">
-              <label class="global-filter__label" for="caliber-select">数据口径</label>
-              <select
-                id="caliber-select"
-                v-model="localFilters.caliber"
-                class="global-filter__select"
-                aria-label="选择数据口径"
-              >
-                <option value="exclude_endorse">不含批改</option>
-                <option value="include_endorse">包含批改</option>
-              </select>
             </div>
           </div>
         </section>
@@ -316,21 +302,6 @@
               </select>
             </div>
 
-            <!-- 是否异地车 -->
-            <div class="global-filter__field">
-              <label class="global-filter__label" for="nonlocal-select">是否异地车</label>
-              <select
-                id="nonlocal-select"
-                v-model="localFilters.is_nonlocal"
-                class="global-filter__select"
-                aria-label="选择是否异地车"
-              >
-                <option value="all">全部</option>
-                <option value="yes">是</option>
-                <option value="no">否</option>
-              </select>
-            </div>
-
             <!-- 吨位（条件显示） -->
             <div class="global-filter__field">
               <label class="global-filter__label" for="tonnage-select">
@@ -363,7 +334,40 @@
           </div>
         </section>
 
-        <!-- 4. 操作区 -->
+        <!-- 4. 数据口径 -->
+        <section class="global-filter__section">
+          <h3 class="global-filter__section-title">数据口径</h3>
+          <div class="global-filter__section-content">
+            <!-- 是否包含批改 -->
+            <div class="global-filter__field global-filter__field--full">
+              <label class="global-filter__label">是否包含批改</label>
+              <div class="global-filter__button-group" role="radiogroup" aria-label="选择是否包含批改">
+                <button
+                  class="global-filter__quick-button"
+                  :class="{ 'global-filter__quick-button--active': localFilters.caliber === 'exclude_endorse' }"
+                  role="radio"
+                  :aria-checked="localFilters.caliber === 'exclude_endorse'"
+                  aria-label="不含批改"
+                  @click="localFilters.caliber = 'exclude_endorse'"
+                >
+                  不含批改
+                </button>
+                <button
+                  class="global-filter__quick-button"
+                  :class="{ 'global-filter__quick-button--active': localFilters.caliber === 'include_endorse' }"
+                  role="radio"
+                  :aria-checked="localFilters.caliber === 'include_endorse'"
+                  aria-label="包含批改"
+                  @click="localFilters.caliber = 'include_endorse'"
+                >
+                  包含批改
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. 操作区 -->
         <div class="global-filter__actions">
           <button
             class="global-filter__button global-filter__button--primary"
@@ -424,7 +428,6 @@ const toast = useToast()
 
 // ========== State ==========
 const isPanelOpen = ref(false)
-const isOrgSectionOpen = ref(false)
 const showExpandedTags = ref(false)
 const showEmptyState = ref(false)
 
@@ -436,7 +439,6 @@ const localFilters = ref({
   is_renewal: 'all',
   is_ev: 'all',
   is_transfer: 'all',
-  is_nonlocal: 'all',
   insurance_category: 'all',
   tonnage: 'all',
   org_locked: false,
@@ -590,25 +592,19 @@ const activeSummaryTags = computed(() => {
   }
 
   // 低优先级维度（不在前8位显示）
-  // 是否异地车
-  if (filters.is_nonlocal !== 'all') {
-    const label = filters.is_nonlocal === 'yes' ? '异地车' : '本地车'
-    tags.push({ key: 'is_nonlocal', label, priority: 9 })
-  }
-
   // 吨位
   if (filters.tonnage !== 'all') {
-    tags.push({ key: 'tonnage', label: `${filters.tonnage}吨`, priority: 10 })
+    tags.push({ key: 'tonnage', label: `${filters.tonnage}吨`, priority: 9 })
   }
 
   // 业务员
   if (filters.salesperson !== 'all') {
-    tags.push({ key: 'salesperson', label: filters.salesperson, priority: 11 })
+    tags.push({ key: 'salesperson', label: filters.salesperson, priority: 10 })
   }
 
   // 团队
   if (filters.team) {
-    tags.push({ key: 'team', label: filters.team, priority: 12 })
+    tags.push({ key: 'team', label: filters.team, priority: 11 })
   }
 
   // 按优先级排序
@@ -667,7 +663,7 @@ function handleRemoveTag(key) {
     localFilters.value.time_range = 'last_7_days'
   } else if (key === 'caliber') {
     localFilters.value.caliber = 'exclude_endorse'
-  } else if (['biz_type', 'is_renewal', 'is_ev', 'is_transfer', 'is_nonlocal', 'insurance_category', 'tonnage', 'salesperson'].includes(key)) {
+  } else if (['biz_type', 'is_renewal', 'is_ev', 'is_transfer', 'insurance_category', 'tonnage', 'salesperson'].includes(key)) {
     localFilters.value[key] = 'all'
   } else {
     localFilters.value[key] = ''
@@ -690,7 +686,6 @@ async function handleClearAll() {
     is_renewal: 'all',
     is_ev: 'all',
     is_transfer: 'all',
-    is_nonlocal: 'all',
     insurance_category: 'all',
     tonnage: 'all',
     org_locked: localFilters.value.org_locked, // 保留锁定状态
@@ -943,10 +938,6 @@ function applyFiltersToStore() {
 
   if (filters.is_transfer !== 'all') {
     activeFilters['是否过户车'] = filters.is_transfer === 'yes' ? '是' : '否'
-  }
-
-  if (filters.is_nonlocal !== 'all') {
-    activeFilters['是否异地车'] = filters.is_nonlocal === 'yes' ? '是' : '否'
   }
 
   if (filters.insurance_category !== 'all') {

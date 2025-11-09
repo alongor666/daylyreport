@@ -84,8 +84,12 @@ class DataProcessor:
 
         # 构建保单号→业务员映射
         tmp = df[['保单号', '业务员']].dropna()
-        # 若同一保单号出现多条，优先选择第一条
-        tmp = tmp.drop_duplicates(subset=['保单号'], keep='first')
+        # 若同一保单号出现多条，优先保留第一条（改为 duplicated 更安全）
+        # 函数级中文注释：
+        # - 背景：部分环境中混合类型（字符串/数字）保单号在 drop_duplicates 过程中可能产生类型不一致警告；
+        # - 修复：改用 duplicated 生成布尔掩码，再反选保留首条，避免潜在的 dtype 问题。
+        dup_mask = tmp.duplicated(subset=['保单号'], keep='first')
+        tmp = tmp[~dup_mask]
         policy_to_staff = {str(r['保单号']): str(r['业务员']) for _, r in tmp.iterrows()}
 
         # 姓名→机构团队信息
@@ -169,12 +173,17 @@ class DataProcessor:
             # 合并数据
             merged_df = pd.concat([existing_df, new_df], ignore_index=True)
 
-            # 去重 - 根据保单号和投保确认时间
+            # 去重 - 根据保单号和投保确认时间（改用 duplicated 保留最后一条）
+            # 函数级中文注释：
+            # - 修复点：使用 duplicated 生成掩码并反选，保证对混合类型的兼容性；
+            # - 同时尝试统一日期列为 datetime，避免字符串/对象导致的等值对比异常。
             if '保单号' in merged_df.columns and '投保确认时间' in merged_df.columns:
-                merged_df = merged_df.drop_duplicates(
-                    subset=['保单号', '投保确认时间'],
-                    keep='last'
-                )
+                try:
+                    merged_df['投保确认时间'] = pd.to_datetime(merged_df['投保确认时间'], errors='coerce')
+                except Exception:
+                    pass
+                dup_mask = merged_df.duplicated(subset=['保单号', '投保确认时间'], keep='last')
+                merged_df = merged_df[~dup_mask]
 
             print(f"  合并完成: {len(existing_df)} + {len(new_df)} = {len(merged_df)} 行")
         else:
@@ -266,8 +275,12 @@ class DataProcessor:
         else:
             date = pd.to_datetime(date)
 
-        # 筛选指定日期的数据
-        daily_data = df[df['投保确认时间'].dt.date == date.date()]
+        # 筛选指定日期的数据（使用规范化日期避免类型不一致）
+        # 函数级中文注释：
+        # - 修复点：用 .dt.normalize() 与锚定日期的 normalize() 比较，避免 .dt.date 产生的 Python 对象类型与 NaT 混合导致的隐性错误。
+        anchor = pd.to_datetime(date)
+        date_col = df['投保确认时间'].dt.normalize()
+        daily_data = df[date_col == anchor.normalize()]
 
         # 计算KPI
         report = {
@@ -314,13 +327,17 @@ class DataProcessor:
         days = weeks * 7 - 1
         start_date = end_date - timedelta(days=days)
 
-        # 筛选时间范围
-        mask = (df['投保确认时间'].dt.date >= start_date.date()) & \
-               (df['投保确认时间'].dt.date <= end_date.date())
+        # 筛选时间范围（规范化到日，避免 .dt.date 的dtype差异）
+        # 函数级中文注释：
+        # - 修复点：用 .dt.normalize() 进行日期区间筛选与分组，提升稳定性与向量化性能。
+        date_col = df['投保确认时间'].dt.normalize()
+        start_norm = start_date.normalize()
+        end_norm = end_date.normalize()
+        mask = (date_col >= start_norm) & (date_col <= end_norm)
         period_data = df[mask]
 
-        # 按日期分组统计
-        daily_stats = period_data.groupby(period_data['投保确认时间'].dt.date).agg({
+        # 按规范化日期分组统计
+        daily_stats = period_data.groupby(period_data['投保确认时间'].dt.normalize()).agg({
             '签单/批改保费': 'sum',
             '签单数量': 'sum'
         }).reset_index()
@@ -333,7 +350,7 @@ class DataProcessor:
             date_obj = pd.to_datetime(row['投保确认时间'])
             trend_data.append({
                 'date': date_obj.strftime('%Y-%m-%d'),
-                'weekday': weekday_map[date_obj.weekday()],
+                'weekday': weekday_map[date_obj.dayofweek],
                 'premium': float(row['签单/批改保费']),
                 'policy_count': int(row['签单数量'])
             })
@@ -490,7 +507,8 @@ class DataProcessor:
 
         # 构建X轴(从最近7天的第一天开始的星期序列)
         weekday_map = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-        first_weekday = periods[0]['start'].weekday()  # 最近7天的第一天是星期几(由anchor_date决定)
+        # 使用 pandas 的 dayofweek 保持与向量化索引一致
+        first_weekday = periods[0]['start'].dayofweek  # 最近7天的第一天是星期几(由anchor_date决定)
         x_axis = []
         for i in range(7):
             x_axis.append(weekday_map[(first_weekday + i) % 7])
@@ -498,17 +516,17 @@ class DataProcessor:
         # 统计每个周期的数据
         series = []
         for idx, period in enumerate(periods):
-            # 筛选时间范围
-            mask = (df['投保确认时间'].dt.date >= period['start'].date()) & \
-                   (df['投保确认时间'].dt.date <= period['end'].date())
+            # 筛选时间范围（规范化到日）
+            date_col = df['投保确认时间'].dt.normalize()
+            start_norm = period['start'].normalize()
+            end_norm = period['end'].normalize()
+            mask = (date_col >= start_norm) & (date_col <= end_norm)
             period_data = df[mask].copy()
 
-            # 按日期分组统计 - 修复日期计算
-            period_data['weekday_index'] = period_data['投保确认时间'].apply(
-                lambda x: (x.date() - period['start'].date()).days if pd.notna(x) else -1
-            )
-            # 过滤掉无效的weekday_index
-            period_data = period_data[period_data['weekday_index'] >= 0]
+            # 按日期分组统计 - 使用向量化计算 weekday_index
+            period_data['weekday_index'] = (period_data['投保确认时间'].dt.normalize() - start_norm).dt.days
+            # 仅保留当前周期的7天索引范围
+            period_data = period_data[(period_data['weekday_index'] >= 0) & (period_data['weekday_index'] < 7)]
 
             # 根据指标选择聚合列
             if metric == 'count':
@@ -603,9 +621,17 @@ class DataProcessor:
         start_7d = anchor - timedelta(days=6)
         start_30d = anchor - timedelta(days=29)
 
-        day_mask = (df['投保确认时间'].dt.date == anchor.date())
-        seven_mask = (df['投保确认时间'].dt.date >= start_7d.date()) & (df['投保确认时间'].dt.date <= anchor.date())
-        thirty_mask = (df['投保确认时间'].dt.date >= start_30d.date()) & (df['投保确认时间'].dt.date <= anchor.date())
+        # 统一日期比较到“天”的规范化形式，避免 .dt.date 的Python对象比较
+        # 函数级中文注释：
+        # - 修复点：用 .dt.normalize() 对齐区间边界，保证类型一致与性能优化。
+        date_col = df['投保确认时间'].dt.normalize()
+        anchor_norm = anchor.normalize()
+        start_7d_norm = start_7d.normalize()
+        start_30d_norm = start_30d.normalize()
+
+        day_mask = (date_col == anchor_norm)
+        seven_mask = (date_col >= start_7d_norm) & (date_col <= anchor_norm)
+        thirty_mask = (date_col >= start_30d_norm) & (date_col <= anchor_norm)
 
         day_df = df[day_mask]
         seven_df = df[seven_mask]
@@ -1048,7 +1074,14 @@ class DataProcessor:
 
         Note:
             会验证业务员匹配情况，如果有业务员在数据中但不在映射文件中，
-            会记录警告信息
+            会记录警告信息。
+
+        函数级中文注释：
+        - 修复点：业务员筛选兼容“仅姓名”与“工号+姓名”两种格式。
+        - 背景：前端 GlobalFilterPanel 使用 policy-mapping 提供的姓名键，
+                后端数据列通常为“工号+姓名”。若直接用姓名做等值过滤会导致无匹配。
+        - 改进：当传入过滤值为中文姓名时，先从映射文件中反查对应“工号+姓名”集合，
+                若存在则按集合过滤；若不存在，则回退为对数据列中文姓名提取后进行匹配。
         """
         import re
 
@@ -1077,9 +1110,35 @@ class DataProcessor:
                     if filters.get('团队') and filters['团队'] != staff_info.get('团队简称'):
                         filters['团队'] = staff_info.get('团队简称')
 
-        # 业务员筛选（可选）
+        # 业务员筛选（兼容：中文姓名 或 工号+姓名）
         if filters.get('业务员'):
-            filtered_df = filtered_df[filtered_df['业务员'] == filters['业务员']]
+            import re
+            requested = str(filters['业务员']).strip()
+
+            # 判断是否为“工号+姓名”格式：包含数字且长度较长
+            is_staff_key_format = bool(re.search(r"\d", requested))
+
+            if is_staff_key_format:
+                # 传入为完整 staff_key：直接等值过滤
+                filtered_df = filtered_df[filtered_df['业务员'] == requested]
+            else:
+                # 传入为中文姓名：尝试通过映射文件反查对应的 staff_key 集合
+                staff_keys = []
+                for staff_key in (self.staff_mapping or {}).keys():
+                    match = re.search(r'[\u4e00-\u9fa5]+', staff_key)
+                    if match and match.group() == requested:
+                        staff_keys.append(staff_key)
+
+                if staff_keys:
+                    # 映射命中：按 staff_key 集合过滤
+                    filtered_df = filtered_df[filtered_df['业务员'].isin(staff_keys)]
+                else:
+                    # 映射未命中：回退为对数据列提取中文姓名后匹配
+                    def extract_name(value):
+                        m = re.search(r'[\u4e00-\u9fa5]+', str(value))
+                        return m.group() if m else ''
+
+                    filtered_df = filtered_df[filtered_df['业务员'].apply(lambda v: extract_name(v) == requested)]
 
         # 三级机构筛选(通过业务员映射)
         if filters.get('三级机构') and filters['三级机构'] != '全部':
@@ -1273,12 +1332,12 @@ class DataProcessor:
         else:
             return None
 
-        # 筛选时间范围
+        # 筛选时间范围（规范化到日，避免 .dt.date 的dtype差异）
+        date_col = df['投保确认时间'].dt.normalize()
         if period == 'day':
-            mask = df['投保确认时间'].dt.date == anchor_date.date()
+            mask = date_col == anchor_date.normalize()
         else:
-            mask = (df['投保确认时间'].dt.date >= start_date.date()) & \
-                   (df['投保确认时间'].dt.date <= anchor_date.date())
+            mask = (date_col >= start_date.normalize()) & (date_col <= anchor_date.normalize())
 
         period_data = df[mask].copy()
 
@@ -1481,12 +1540,12 @@ class DataProcessor:
         else:
             return None
 
-        # 筛选时间范围
+        # 筛选时间范围（规范化到日，避免 .dt.date 的dtype差异）
+        date_col = df['投保确认时间'].dt.normalize()
         if period == 'day':
-            mask = df['投保确认时间'].dt.date == anchor_date.date()
+            mask = date_col == anchor_date.normalize()
         else:
-            mask = (df['投保确认时间'].dt.date >= start_date.date()) & \
-                   (df['投保确认时间'].dt.date <= anchor_date.date())
+            mask = (date_col >= start_date.normalize()) & (date_col <= anchor_date.normalize())
 
         period_data = df[mask].copy()
 
@@ -1612,12 +1671,12 @@ class DataProcessor:
         else:
             return None
 
-        # 筛选时间范围
+        # 筛选时间范围（规范化到日，避免 .dt.date 的dtype差异）
+        date_col = df['投保确认时间'].dt.normalize()
         if period == 'day':
-            mask = df['投保确认时间'].dt.date == anchor_date.date()
+            mask = date_col == anchor_date.normalize()
         else:
-            mask = (df['投保确认时间'].dt.date >= start_date.date()) & \
-                   (df['投保确认时间'].dt.date <= anchor_date.date())
+            mask = (date_col >= start_date.normalize()) & (date_col <= anchor_date.normalize())
 
         period_data = df[mask].copy()
 
@@ -1739,12 +1798,12 @@ class DataProcessor:
         else:
             return None
 
-        # 筛选时间范围
+        # 筛选时间范围（规范化到日，避免 .dt.date 的dtype差异）
+        date_col = df['投保确认时间'].dt.normalize()
         if period == 'day':
-            mask = df['投保确认时间'].dt.date == anchor_date.date()
+            mask = date_col == anchor_date.normalize()
         else:
-            mask = (df['投保确认时间'].dt.date >= start_date.date()) & \
-                   (df['投保确认时间'].dt.date <= anchor_date.date())
+            mask = (date_col >= start_date.normalize()) & (date_col <= anchor_date.normalize())
 
         period_data = df[mask].copy()
 

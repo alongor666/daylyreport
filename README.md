@@ -47,6 +47,16 @@ python api_server.py
 # API地址 http://localhost:5001
 ```
 
+### 🌀 一键启动（前后端同时跑）
+
+依赖安装完成后，可直接运行：
+
+```bash
+bash scripts/dev_full.sh
+```
+
+脚本会自动检测 `.venv`、选择可用 Python 解释器，将 `backend/api_server.py` 放到后台，并在同一个终端前台启动 Vite HMR；按 `Ctrl+C` 会一次性回收两个进程。
+
 ✅ 打开浏览器访问 `http://localhost:3000`，开始使用！
 
 > **遇到问题？** 查看 [故障排查指南](docs/DEVELOPER_GUIDE.md#故障排查)
