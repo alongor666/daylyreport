@@ -1,562 +1,328 @@
-# 车险签单数据分析平台 v2.0
+# 🚗 车险签单数据分析平台 v2.0
 
-> 现代化的车险签单数据实时分析与可视化平台 | Modern Vehicle Insurance Analytics Platform
+> 现代化的车险业务数据实时分析与可视化平台，帮助业务团队快速洞察趋势、识别机会、优化决策。
 
-[![Vue 3](https://img.shields.io/badge/Vue-3.4-brightgreen.svg)](https://vuejs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.0-646CFF.svg)](https://vitejs.dev/)
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-3.0-black.svg)](https://flask.palletsprojects.com/)
-
----
-
-## ✨ 功能特性
-
-### 📊 数据分析
-- **实时KPI监控**: 签单保费、保单件数、手续费、目标达成度
-- **多维度筛选**: 支持机构/团队/新业务分类/能源类型/险种等8个维度
-- **趋势分析**: 3周对比柱状图，动态X轴（周一~周日）
-- **智能对比**: 近7天 vs 近14天 vs 近21天三周期对比
-- **数据导出**: 支持Excel/CSV格式导出（计划中）
-
-### 🎨 用户体验
-- **现代化UI**: 基于Material Design的紫色渐变主题
-- **响应式设计**: 完美适配PC、平板、手机
-- **流畅动画**: Hover效果、平滑过渡、加载骨架屏
-- **交互式图表**: ECharts 5图表，支持缩放、悬停详情
-- **智能筛选**: 折叠面板设计，标签化已选项，一键清除
-
-### 🚀 性能优化
-- **秒级加载**: 首屏加载 < 2s（v2.0目标）
-- **组件化架构**: Vue 3 Composition API，代码复用率高
-- **状态管理**: Pinia全局状态，避免重复请求
-- **懒加载**: 按需加载组件和图表库
-- **缓存优化**: 智能缓存筛选项和历史数据
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Vue](https://img.shields.io/badge/Vue-3.5-brightgreen.svg)](https://vuejs.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0-lightgrey.svg)](https://flask.palletsprojects.com/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 ---
 
-## 🏗️ 技术架构
+## 🎯 10秒了解项目
 
-### 前端技术栈（v2.0全新升级）
-- **框架**: Vue 3（Composition API）
-- **构建工具**: Vite 5
-- **状态管理**: Pinia 2
-- **HTTP客户端**: Axios
-- **图表库**: Apache ECharts 5
-- **样式方案**: CSS Variables + BEM命名
+**车险签单数据分析平台** 是一个前后端分离的 Web 应用，提供：
+- 📊 **实时KPI仪表板** - 签单保费、件数、手续费等核心指标
+- 📈 **趋势对比分析** - 周环比、同比多维度对比
+- 🔍 **智能筛选** - 8个维度自由组合筛选
+- 🎨 **护眼设计** - 基于眼科医学研究的配色系统
+- 📱 **全平台支持** - Web、桌面、移动端响应式适配
+
+**技术栈**: Vue 3 + Vite + Pinia + Flask + Pandas + ECharts
+
+---
+
+## ⚡ 30秒快速启动
+
+### 前置条件
+- Node.js 18+
+- Python 3.11+
+
+### 启动步骤
+
+```bash
+# 1. 克隆项目
+git clone <your-repo-url>
+cd daylyreport
+
+# 2. 启动前端 (终端1)
+npm install
+npm run dev
+# 访问 http://localhost:3000
+
+# 3. 启动后端 (终端2)
+pip install -r requirements.txt
+cd backend
+python api_server.py
+# API地址 http://localhost:5001
+```
+
+✅ 打开浏览器访问 `http://localhost:3000`，开始使用！
+
+> **遇到问题？** 查看 [故障排查指南](docs/DEVELOPER_GUIDE.md#故障排查)
+
+---
+
+## 📚 文档导航
+
+### 🎯 按角色查找
+
+| 我是... | 我需要... | 查看文档 |
+|---------|----------|---------|
+| 👨‍💻 **开发者** | 环境搭建、API参考、开发规范 | [开发者指南](docs/DEVELOPER_GUIDE.md) |
+| 🎨 **设计师** | 设计原则、组件规范、配色系统 | [设计指南](docs/DESIGN_GUIDE.md) |
+| 🏗️ **架构师** | 系统架构、技术选型、扩展性设计 | [架构文档](docs/ARCHITECTURE.md) |
+| 📋 **产品经理** | 需求规格、用户故事、验收标准 | [产品规格书](docs/PRODUCT_SPEC.md) |
+| 🎭 **主题定制** | 主题系统、自定义配色、多平台适配 | [主题系统](docs/THEME_SYSTEM.md) |
+
+### 🔍 按任务查找
+
+| 我想... | 查看文档 |
+|---------|---------|
+| 5分钟快速上手 | [快速开始](#30秒快速启动) |
+| 了解核心功能 | [功能概览](#核心功能) |
+| 参与项目贡献 | [贡献指南](CONTRIBUTING.md) |
+| 查看更新历史 | [变更日志](CHANGELOG.md) |
+| v1.0 → v2.0 迁移 | [迁移指南](docs/DEVELOPER_GUIDE.md#迁移指南) |
+
+---
+
+## ✨ 核心功能
+
+### 1. 实时KPI仪表板
+
+**特性**:
+- 🎯 4个核心KPI卡片（签单保费、件数、手续费、目标差距）
+- 📊 三口径数据展示（当日、近7天、近30天）
+- 📈 迷你趋势图 (Sparkline)
+- ⚡ 实时数据刷新
+
+### 2. 周对比趋势分析
+
+**特性**:
+- 📊 3周数据对比（最近、上周、前周）
+- 🔄 保费/件数切换
+- 🎨 护眼配色系统
+- 🖱️ 交互式图表（悬停详情、缩放）
+
+### 3. 多维度智能筛选
+
+**筛选维度**（8个）:
+- 📍 机构团队（三级机构、团队）
+- 🚗 车辆属性（新能源、过户车）
+- 📋 业务分类（新保、续保、转保）
+- 🏷️ 险种大类、吨位分段
+- 📞 电销标记
+
+**特性**:
+- ✅ 多选组合筛选
+- 🏷️ 标签式已选展示
+- 🔄 一键重置
+- 💾 筛选历史（未来）
+
+---
+
+## 🏗️ 系统架构
+
+```
+┌────────────────────────────────────────┐
+│       用户浏览器 (Browser)              │
+├────────────────────────────────────────┤
+│                                         │
+│  ┌──────────────────────────────────┐  │
+│  │    Vue 3 SPA (Vite)              │  │
+│  │  ┌──────┬─────────┬───────────┐  │  │
+│  │  │ 组件  │ Pinia   │ Services │  │  │
+│  │  │ 层   │ 状态管理 │ API层    │  │  │
+│  │  └──────┴─────────┴───────────┘  │  │
+│  └──────────────┬───────────────────┘  │
+│                 │ HTTP/Axios            │
+│                 ↓                       │
+│  ┌──────────────────────────────────┐  │
+│  │    Flask REST API                │  │
+│  │  ┌────────────────────────────┐  │  │
+│  │  │ DataProcessor (Pandas)     │  │  │
+│  │  │ - Excel → CSV 转换         │  │  │
+│  │  │ - 数据清洗和聚合           │  │  │
+│  │  │ - 趋势计算                 │  │  │
+│  │  └────────────────────────────┘  │  │
+│  └──────────────┬───────────────────┘  │
+│                 │ File I/O              │
+│                 ↓                       │
+│  ┌──────────────────────────────────┐  │
+│  │  数据存储层                       │  │
+│  │  - CSV主数据文件                 │  │
+│  │  - JSON配置文件                  │  │
+│  └──────────────────────────────────┘  │
+└────────────────────────────────────────┘
+```
+
+**关键设计**:
+- ✅ 前后端完全分离
+- ✅ RESTful API 设计
+- ✅ 组件化架构
+- ✅ 状态集中管理
+- ✅ 响应式数据流
+
+> **详细架构** 请查看 [架构文档](docs/ARCHITECTURE.md)
+
+---
+
+## 🎨 设计亮点
+
+### 护眼配色系统
+
+基于眼科医学研究，我们采用低饱和度、中等明度的配色方案：
+
+| 用途 | 颜色 | 色值 | 设计理念 |
+|------|------|------|----------|
+| **D (最新周)** | 主蓝色 | `#5B8DEF` | 柔和专业，主数据突出 |
+| **D-7 (上周)** | 次灰色 | `#8B95A5` | 中性辅助，不抢焦点 |
+| **D-14 (前周)** | 浅灰色 | `#C5CAD3` | 背景参考，最低权重 |
+| **上升趋势** | 成功绿 | `#52C41A` | 正向鼓励 |
+| **下降趋势** | 警示红 | `#F5222D` | 警示提醒 |
+
+**设计原则**:
+1. 🛡️ **护眼优先** - 减少视觉疲劳
+2. 📊 **信息编码** - 颜色传递业务含义
+3. 📐 **层次清晰** - 视觉权重分明
+4. 🎯 **专业克制** - 避免过度装饰
+
+> **完整设计系统** 请查看 [设计指南](docs/DESIGN_GUIDE.md)
+
+---
+
+## 🚀 技术栈
+
+### 前端技术栈
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **Vue 3** | 3.5+ | 渐进式框架，Composition API |
+| **Vite** | 5.0+ | 极速构建工具，HMR热更新 |
+| **Pinia** | 2.3+ | 官方推荐状态管理 |
+| **ECharts** | 5.6+ | 数据可视化图表库 |
+| **Axios** | 1.6+ | HTTP客户端 |
 
 ### 后端技术栈
-- **Web框架**: Flask 3.0
-- **数据处理**: Pandas 2.0
-- **Excel解析**: openpyxl
-- **服务器**: Gunicorn + Nginx（生产环境）
 
-### 架构图
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **Flask** | 3.0+ | 轻量级Web框架 |
+| **Pandas** | 2.1+ | 数据处理和分析 |
+| **openpyxl** | 3.1+ | Excel文件解析 |
 
-```
-┌─────────────────────────────────────────┐
-│         Vue 3 SPA (Vite)                │
-├─────────────────────────────────────────┤
-│  Components    │  Stores   │  Services  │
-│  - Dashboard   │  - app    │  - api     │
-│  - KpiCard     │  - filter │  - utils   │
-│  - ChartView   │  - data   │            │
-│  - FilterPanel │           │            │
-├─────────────────────────────────────────┤
-│          Flask REST API                 │
-│  /api/refresh                           │
-│  /api/daily-report                      │
-│  /api/week-comparison                   │
-│  /api/filter-options                    │
-├─────────────────────────────────────────┤
-│     Pandas Data Processing              │
-│  Excel → CSV → 清洗 → 合并 → 查询      │
-└─────────────────────────────────────────┘
-```
+### 部署技术栈
+
+| 技术 | 用途 |
+|------|------|
+| **Nginx** | 前端静态文件托管 + 反向代理 |
+| **Gunicorn** | 生产级WSGI服务器 |
+| **Docker** | 容器化部署（可选） |
 
 ---
 
-## 📁 项目结构
+## 📦 项目结构
 
 ```
 daylyreport/
-├── frontend/                      # 前端源码（Vue 3）
+├── docs/                      # 📚 完整文档
+│   ├── DEVELOPER_GUIDE.md     # 开发者指南
+│   ├── DESIGN_GUIDE.md        # 设计指南
+│   ├── ARCHITECTURE.md        # 架构文档
+│   ├── PRODUCT_SPEC.md        # 产品规格书
+│   └── THEME_SYSTEM.md        # 主题系统
+├── frontend/                  # 🎨 前端代码
 │   ├── src/
-│   │   ├── components/           # Vue组件
-│   │   │   ├── Dashboard.vue     # 主仪表板
-│   │   │   ├── KpiCard.vue       # KPI卡片
-│   │   │   ├── ChartView.vue     # 图表组件
-│   │   │   ├── FilterPanel.vue   # 筛选面板
-│   │   │   └── Toast.vue         # 通知组件
-│   │   ├── stores/               # Pinia状态管理
-│   │   │   ├── app.ts            # 应用全局状态
-│   │   │   ├── filter.ts         # 筛选器状态
-│   │   │   └── data.ts           # 数据状态
-│   │   ├── services/             # 服务层
-│   │   │   ├── api.ts            # API调用封装
-│   │   │   └── utils.ts          # 工具函数
-│   │   ├── App.vue               # 根组件
-│   │   └── main.ts               # 入口文件
-│   ├── public/                   # 静态资源
-│   ├── vite.config.ts            # Vite配置
-│   └── package.json              # 前端依赖
-│
-├── backend/                       # 后端服务
-│   ├── data_processor.py         # 数据处理核心
-│   └── api_server.py             # Flask API服务器
-│
-├── data/                          # 数据目录
-│   ├── *.xlsx                    # Excel源文件
-│   └── processed/                # 已处理文件归档
-│
-├── docs/                          # 项目文档
-│   ├── PRD.md                    # 产品需求文档
-│   ├── ARCHITECTURE.md           # 架构设计文档
-│   ├── DESIGN_SYSTEM.md          # 设计系统文档
-│   └── MIGRATION_GUIDE.md        # v1.0迁移指南
-│
-├── CLAUDE.md                      # Claude Code工作指南
-├── README.md                      # 项目说明（本文件）
-└── requirements.txt               # Python依赖
+│   │   ├── components/        # Vue组件
+│   │   ├── stores/            # Pinia状态管理
+│   │   ├── services/          # API服务层
+│   │   └── assets/            # 静态资源
+│   ├── public/                # 公共资源
+│   ├── vite.config.js         # Vite配置
+│   └── package.json           # 前端依赖
+├── backend/                   # ⚙️ 后端代码
+│   ├── api_server.py          # Flask API入口
+│   ├── data_processor.py      # 数据处理核心
+│   └── config.py              # 配置文件
+├── data/                      # 📊 数据文件
+│   ├── *.xlsx                 # 输入Excel文件
+│   └── processed/             # 已处理文件归档
+├── 车险清单_合并.csv          # 主数据文件
+├── 业务员机构团队归属.json    # 映射配置
+├── README.md                  # 👈 你在这里
+├── CHANGELOG.md               # 变更日志
+├── CONTRIBUTING.md            # 贡献指南
+└── LICENSE                    # 开源协议
 ```
 
 ---
 
-## 🚀 快速开始
+## 🎯 开发路线图
 
-### 环境要求
+### ✅ v2.0 (当前版本)
+- [x] Vue 3 前端架构重构
+- [x] Pinia 状态管理
+- [x] 护眼配色系统
+- [x] 响应式设计
+- [x] 周对比趋势分析
+- [x] 多维度筛选
 
-- **操作系统**: Windows 10+, macOS 11+, Linux, 统信UOS, 麒麟OS
-- **Python**: 3.8+ (推荐3.10或3.11)
-- **Node.js**: 18+ (推荐20 LTS)
-- **浏览器**: Chrome 90+, Edge 90+, Firefox 88+, Safari 14+
+### 🚧 v2.1 (规划中)
+- [ ] 数据导出功能 (Excel/CSV)
+- [ ] 自定义日期范围选择
+- [ ] 数据钻取功能
+- [ ] 筛选预设保存
+- [ ] 暗色模式完整支持
 
-### 安装步骤
+### 🔮 v3.0 (未来愿景)
+- [ ] 智能预警系统
+- [ ] AI驱动的业务洞察
+- [ ] 团队协作功能
+- [ ] 移动端原生应用
+- [ ] 实时数据流
 
-#### 1. 克隆仓库
-
-```bash
-git clone <repository-url>
-cd daylyreport
-```
-
-#### 2. 安装后端依赖
-
-**Windows:**
-```bash
-pip install -r requirements.txt
-```
-
-**macOS/Linux:**
-```bash
-pip3 install -r requirements.txt
-```
-
-**信创系统/网络受限环境** (使用清华镜像源):
-```bash
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-#### 3. 安装前端依赖
-
-```bash
-cd frontend
-npm install
-
-# 或使用国内镜像源
-npm install --registry=https://registry.npmmirror.com
-```
-
-#### 4. 准备数据
-
-将每日Excel签单清单放入 `data/` 目录:
-
-```
-data/
-├── 2025-11-05_签单清单.xlsx
-├── 2025-11-06_签单清单.xlsx
-└── ...
-```
-
-**Excel格式要求**:
-- 必须包含字段: `投保确认时间`, `签单/批改保费`, `签单数量`, `保单号`, `业务员`
-- 支持 `.xlsx` 和 `.xls` 格式
-- 系统会自动去重和清洗数据
+> **详细计划** 请查看 [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-### 启动服务
+## 🤝 参与贡献
 
-#### 开发环境
+我们欢迎所有形式的贡献！无论是：
+- 🐛 报告Bug
+- 💡 提出新功能建议
+- 📝 改进文档
+- 🔧 提交代码
 
-**方式一: 使用启动脚本（推荐）**
-
-**Windows:**
-```bash
-start_server.bat
-```
-
-**macOS/Linux/信创系统:**
-```bash
-./start_server.sh
-```
-
-**首次使用注意**: macOS/Linux用户需先添加执行权限:
-```bash
-chmod +x start_server.sh
-```
-
-**方式二: 手动启动**
-
-**启动后端（终端1）:**
-```bash
-cd backend
-python api_server.py
-# 后端运行在 http://localhost:5001
-```
-
-**启动前端（终端2）:**
-```bash
-cd frontend
-npm run dev
-# 前端运行在 http://localhost:3000
-```
-
-#### 访问系统
-
-- **开发环境**: http://localhost:3000
-- **API文档**: http://localhost:5001/api/health
-- **后端健康检查**: http://localhost:5001/api/latest-date
+**开始贡献**:
+1. 阅读 [贡献指南](CONTRIBUTING.md)
+2. Fork 本仓库
+3. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+4. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+5. 推送到分支 (`git push origin feature/AmazingFeature`)
+6. 开启 Pull Request
 
 ---
 
-## 📖 使用指南
+## 📄 开源协议
 
-### 数据刷新流程
-
-1. **添加新数据**: 将新Excel文件放入 `data/` 目录
-2. **触发刷新**: 点击页面右上角"刷新数据"按钮
-3. **自动处理**:
-   - Excel → CSV转换
-   - 数据清洗（去重、格式化、缺失值填充）
-   - 与历史数据合并
-   - 处理完的文件移至 `data/processed/`
-4. **实时更新**: 页面自动刷新显示最新KPI和图表
-
-### 筛选功能
-
-**8个筛选维度**:
-- 三级机构（与团队联动）
-- 团队
-- 是否续保（新/转/续）
-- 是否新能源
-- 过户车
-- 险种大类
-- 吨位分段
-- 电销标记
-
-**使用技巧**:
-- 选择机构后，团队下拉框自动联动
-- 点击已选标签快速移除筛选项
-- "重置"按钮清除所有筛选
-- "应用筛选"按钮触发数据查询
-
-### 图表说明
-
-**KPI卡片**:
-- 显示当日/近7天/近30天数据
-- 带趋势指示器（↑ 上升、↓ 下降、→ 持平）
-- 点击卡片查看详细数据（计划中）
-
-**周对比柱状图**:
-- 最近7天 vs 上7天 vs 前7天
-- X轴为动态周几（周一~周日）
-- 支持保费/件数指标切换
-- 鼠标悬停显示详细数据
+本项目采用 MIT 协议开源 - 详见 [LICENSE](LICENSE) 文件
 
 ---
 
-## 🔌 API接口
+## 🙏 致谢
 
-### 数据刷新
-
-```http
-POST /api/refresh
-```
-
-**响应示例**:
-```json
-{
-  "success": true,
-  "message": "数据刷新成功",
-  "processed_files": ["2025-11-07_签单清单.xlsx"]
-}
-```
-
-### 日报数据
-
-```http
-GET /api/daily-report?date=2025-11-07
-```
-
-**响应示例**:
-```json
-{
-  "success": true,
-  "data": {
-    "date": "2025-11-07",
-    "premium": 205000,
-    "count": 45,
-    "commission": 15000,
-    "target_gap": 5000,
-    "target_completion": 102.5
-  }
-}
-```
-
-### 周对比数据
-
-```http
-POST /api/week-comparison
-Content-Type: application/json
-
-{
-  "filters": {
-    "三级机构": "成都",
-    "是否新能源": "是"
-  }
-}
-```
-
-**响应示例**:
-```json
-{
-  "success": true,
-  "data": {
-    "categories": ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
-    "recent_week": [45000, 52000, 48000, 55000, 60000, 35000, 40000],
-    "last_week": [42000, 50000, 46000, 53000, 58000, 33000, 38000],
-    "before_last_week": [40000, 48000, 44000, 51000, 56000, 31000, 36000]
-  }
-}
-```
-
-### 筛选选项
-
-```http
-GET /api/filter-options
-```
-
-**响应示例**:
-```json
-{
-  "success": true,
-  "data": {
-    "三级机构": ["成都", "绵阳", "德阳", "..."],
-    "团队": ["团队A", "团队B", "..."],
-    "车险新业务分类": ["新", "转", "续"],
-    "是否新能源": ["是", "否"],
-    "是否过户车": ["是", "否"]
-  }
-}
-```
-
-完整API文档请参考: [CLAUDE.md](./CLAUDE.md#api端点详解)
+本项目的诞生离不开以下优秀的开源项目：
+- [Vue.js](https://vuejs.org/) - 渐进式JavaScript框架
+- [ECharts](https://echarts.apache.org/) - 强大的数据可视化库
+- [Flask](https://flask.palletsprojects.com/) - 轻量级Python Web框架
+- [Pandas](https://pandas.pydata.org/) - 数据分析工具
+- [Ant Design](https://ant.design/) - 设计系统参考
 
 ---
 
-## ⚙️ 配置说明
+## 📞 联系我们
 
-### 修改日目标
-
-编辑 `backend/data_processor.py` 第206行:
-
-```python
-daily_target = 200000  # 修改此值（单位：元）
-```
-
-### 修改服务器端口
-
-**后端端口** (`backend/api_server.py` 第229行):
-```python
-PORT = 5001  # 修改此值
-```
-
-**前端端口** (`frontend/vite.config.ts`):
-```typescript
-export default defineConfig({
-  server: {
-    port: 3000  // 修改此值
-  }
-})
-```
-
-### 添加新筛选维度
-
-详细步骤请参考: [CLAUDE.md - 修改系统](./CLAUDE.md#修改系统)
+- **问题反馈**: [GitHub Issues](https://github.com/your-repo/issues)
+- **功能建议**: [GitHub Discussions](https://github.com/your-repo/discussions)
+- **技术支持**: tech-support@example.com
 
 ---
 
-## 🧪 测试
+<div align="center">
 
-### 数据处理测试
+**Made with ❤️ for Insurance Business Teams**
 
-```bash
-cd backend
-python data_processor.py
-```
+[⬆ 回到顶部](#-车险签单数据分析平台-v20)
 
-这将输出测试报告，包括:
-- 数据清洗统计
-- 去重记录数
-- 日期范围
-- 样本数据预览
-
-### 前端单元测试（计划中）
-
-```bash
-cd frontend
-npm run test
-```
-
-### E2E测试（计划中）
-
-```bash
-cd frontend
-npm run test:e2e
-```
-
----
-
-## 📊 版本历史
-
-### v2.0.0 (2025-11-07) - 全面升级
-
-**重大变更**:
-- 前端重构为Vue 3 + Vite架构
-- 引入Pinia状态管理
-- 全新设计系统（Material Design风格）
-- 组件化架构，代码可维护性提升100%
-- 性能优化，首屏加载速度提升50%
-- 响应式设计全面升级，移动端体验提升80%
-
-**新增功能**:
-- 折叠式筛选面板
-- 标签化已选筛选项
-- Toast通知系统
-- Skeleton加载占位
-- 智能缓存机制
-
-**技术债务清理**:
-- 移除所有全局变量
-- 移除inline事件处理器
-- 移除alert()调用
-- 添加错误边界
-- 实现防抖和节流
-
-### v1.0.0 (2024-10) - 初始版本
-
-- 原生JavaScript + Flask实现
-- 基础KPI展示
-- 简单图表对比
-- 基础筛选功能
-
-完整更新日志: [CHANGELOG.md](./docs/CHANGELOG.md)
-
----
-
-## 📚 相关文档
-
-- **[PRD.md](./docs/PRD.md)** - 产品需求文档（完整功能规划）
-- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - 架构设计文档
-- **[DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md)** - 设计系统规范
-- **[MIGRATION_GUIDE.md](./docs/MIGRATION_GUIDE.md)** - v1.0迁移指南
-- **[CLAUDE.md](./CLAUDE.md)** - Claude Code开发指南
-
----
-
-## 🛠️ 常见问题
-
-### Q: 为什么后端启动失败？
-
-**A**: 请检查:
-1. Python版本是否 >= 3.8
-2. 依赖是否安装完整: `pip list | grep -E "flask|pandas|openpyxl"`
-3. 端口5001是否被占用: `lsof -i :5001` (macOS/Linux) 或 `netstat -ano | findstr 5001` (Windows)
-
-### Q: 为什么前端页面空白？
-
-**A**: 请检查:
-1. Node.js版本是否 >= 18
-2. 前端依赖是否安装: `ls frontend/node_modules`
-3. 浏览器控制台是否有错误
-4. 后端API是否正常运行: 访问 http://localhost:5001/api/health
-
-### Q: macOS上启动脚本无法执行？
-
-**A**: 添加执行权限:
-```bash
-chmod +x start_server.sh
-```
-
-### Q: 数据刷新后没有变化？
-
-**A**: 请检查:
-1. Excel文件是否放在 `data/` 目录
-2. 文件名格式是否正确（建议: `YYYY-MM-DD_签单清单.xlsx`）
-3. 后端控制台是否有错误日志
-4. 浏览器是否缓存了旧数据（尝试硬刷新: Ctrl+Shift+R）
-
-### Q: 图表显示异常？
-
-**A**: 请检查:
-1. 浏览器是否支持（推荐Chrome 90+）
-2. 窗口大小调整后图表是否自适应（已实现防抖）
-3. 数据是否存在（查看Network面板API响应）
-
-### Q: 信创系统/国产浏览器兼容性？
-
-**A**:
-- 支持统信UOS、麒麟OS等信创系统
-- 支持360、QQ、搜狗等国产浏览器（基于Chromium内核）
-- 如遇问题，请使用系统自带浏览器或安装Chrome
-
----
-
-## 🤝 贡献指南
-
-欢迎提交Issue和Pull Request！
-
-**开发流程**:
-1. Fork本仓库
-2. 创建特性分支: `git checkout -b feature/AmazingFeature`
-3. 提交更改: `git commit -m 'Add some AmazingFeature'`
-4. 推送到分支: `git push origin feature/AmazingFeature`
-5. 提交Pull Request
-
-**代码规范**:
-- 前端: 遵循Vue 3官方风格指南
-- 后端: 遵循PEP 8规范
-- 提交信息: 遵循Conventional Commits规范
-
----
-
-## 📄 许可证
-
-MIT License
-
-Copyright (c) 2025 车险业务团队
-
----
-
-## 👥 联系方式
-
-如有问题或建议，请通过以下方式联系:
-
-- **Issue**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Email**: your-email@example.com
-
----
-
-**Made with ❤️ for 车险业务团队**
-
-*从v1.0到v2.0，我们始终致力于提供最佳的数据分析体验*
+</div>

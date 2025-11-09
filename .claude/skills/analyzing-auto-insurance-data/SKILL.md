@@ -1,6 +1,7 @@
 ---
 name: analyzing-auto-insurance-data
 description: Analyzes vehicle insurance daily reports and signing lists. Use when user asks to analyze insurance data, generate business reports, check institution performance, monitor policy trends, or detect business anomalies. Handles Excel/CSV files with fields like premium, institution, customer type, and renewal status.
+allowed-tools: Read, Edit, Grep, Glob
 ---
 
 # Vehicle Insurance Business Data Analysis
@@ -363,8 +364,360 @@ python scripts/convert_excel_to_csv.py 业务员机构团队对照表.xlsx --map
 
 **Recommendation**: Always use Option 1 or 2 for best performance
 
+## Core Data Processing Logic Reference
+
+### DataProcessor Class Overview
+
+The backend implements a comprehensive `DataProcessor` class ([backend/data_processor.py](backend/data_processor.py)) that handles all data operations. Key responsibilities:
+
+#### 1. Staff-Institution Mapping (`_build_name_to_info`)
+**Location**: [backend/data_processor.py:24-58](backend/data_processor.py#L24-L58)
+
+**Purpose**: Build name → institution/team mapping from staff mapping file
+
+**Logic**:
+- Extract Chinese name from "工号+姓名" format (e.g., "200049147向轩颉" → "向轩颉")
+- Create mapping: `{姓名: {三级机构, 四级机构, 团队简称}}`
+- Detect conflicts: same name with different institution/team assignments
+- Returns: `(name_to_info dict, conflicts list)`
+
+**Business Rule**: When same name appears multiple times with different info, keep last record and flag as conflict
+
+#### 2. Policy Mapping (`get_policy_mapping`)
+**Location**: [backend/data_processor.py:60-98](backend/data_processor.py#L60-L98)
+
+**Purpose**: Create unique policy number → staff → institution/team chain
+
+**Returns**:
+```python
+{
+  'policy_to_staff': {保单号: 业务员姓名},
+  'staff_to_info': {姓名: {三级机构, 四级机构, 团队简称}},
+  'conflicts': [姓名列表]
+}
+```
+
+**Use Case**: Ensures data consistency when filtering by policy number
+
+#### 3. KPI Three-Window Calculation (`get_kpi_windows`)
+**Location**: [backend/data_processor.py:559-658](backend/data_processor.py#L559-L658)
+
+**Purpose**: Calculate KPI metrics across 3 time windows anchored to a specific date
+
+**Three Windows**:
+1. **Day**: Specified date only
+2. **Last 7 days**: 7-day window ending on specified date (inclusive)
+3. **Last 30 days**: 30-day window ending on specified date (inclusive)
+
+**Metrics per Window**:
+- Total premium (`签单/批改保费`)
+- Policy count (`签单数量`)
+- Commission (`手续费含税`)
+
+**Returns**:
+```python
+{
+  'anchor_date': 'YYYY-MM-DD',
+  'premium': {'day': float, 'last7d': float, 'last30d': float},
+  'policy_count': {'day': int, 'last7d': int, 'last30d': int},
+  'commission': {'day': float, 'last7d': float, 'last30d': float},
+  'target_gap_day': float,
+  'validation': {...}
+}
+```
+
+**Key Implementation Details**:
+- Anchor date defaults to latest date in dataset
+- Uses `pd.to_datetime` for date parsing with error handling
+- Applies filters BEFORE calculating windows
+- Includes data validation results
+
+#### 4. Week Comparison (`get_week_comparison`)
+**Location**: [backend/data_processor.py:408-557](backend/data_processor.py#L408-L557)
+
+**Purpose**: Compare same weekdays across 3 consecutive 7-day periods
+
+**Algorithm**:
+1. Anchor to latest date (or specified date)
+2. Define 3 periods:
+   - Period 0 (D): [anchor - 6 days, anchor]
+   - Period 1 (D-7): [anchor - 13 days, anchor - 7 days]
+   - Period 2 (D-14): [anchor - 20 days, anchor - 14 days]
+3. For each period, extract 7 consecutive days aligned by weekday
+4. Calculate daily premium or count for each day
+5. Generate chart-ready series data
+
+**Returns**:
+```python
+{
+  'latest_date': '2025-11-05',
+  'x_axis': ['周三', '周四', '周五', '周六', '周日', '周一', '周二'],
+  'series': [
+    {
+      'name': 'D-14 (10-22): 781万',
+      'data': [110234.5, 95023.1, ...],  # 7 daily values
+      'dates': ['2025-10-22', '2025-10-23', ...],
+      'code': 'D-14',
+      'total_value': 7814320.5,
+      'period_index': 2
+    },
+    ...
+  ],
+  'validation': {...}
+}
+```
+
+**Metrics**:
+- `metric='premium'`: Sum of `签单/批改保费` per day
+- `metric='count'`: Count of policies with premium ≥ 50 per day
+
+**X-Axis Logic**: Weekday labels start from first day of Period 0 (D), maintaining consistent weekday alignment across all 3 periods
+
+**Why This Matters**: Enables apple-to-apple comparison (e.g., all Mondays across 3 weeks) to identify day-of-week patterns
+
+#### 5. Filter Application (`_apply_filters`)
+**Location**: [backend/data_processor.py:660-769](backend/data_processor.py#L660-L769)
+
+**Purpose**: Apply hierarchical filters based on staff mapping
+
+**Filter Hierarchy**:
+1. **保单号** (Policy Number) - Highest priority, unique identifier
+2. **业务员** (Staff Name)
+3. **三级机构** (L3 Institution) - Via staff mapping lookup
+4. **团队** (Team) - Via staff mapping lookup
+5. **是否续保** (Renewal Status)
+6. **是否新能源** (New Energy Vehicle)
+7. **是否过户车** (Transfer Vehicle)
+8. **险种大类** (Product Category)
+9. **吨位** (Tonnage Range)
+10. **is_dianxiao** (Telemarketing) - Special logic: `终端来源 == '0110融合销售'`
+
+**Critical Logic - Institution/Team Filtering**:
+```python
+# Institution filter: Find all staff belonging to this institution
+staff_list = [extract_name(key)
+              for key, info in mapping.items()
+              if info['三级机构'] == filter_value]
+df = df[df['业务员'].isin(staff_list)]
+```
+
+**Why Staff Mapping is Authoritative**: The `三级机构` field in raw data may be incorrect. Always use staff mapping to determine correct institution assignment.
+
+**Policy Consistency Check**: When filtering by 保单号, enforce that institution/team filters match the mapped values for that policy's staff
+
+#### 6. Staff Performance Distribution (`get_staff_performance_distribution`)
+**Location**: [backend/data_processor.py:821-950](backend/data_processor.py#L821-L950)
+
+**Purpose**: Analyze how many staff fall into each performance tier
+
+**Performance Tiers** (by premium):
+- <1万 (< 10,000)
+- 1-2万 (10,000 - 20,000)
+- 2-3万 (20,000 - 30,000)
+- 3-5万 (30,000 - 50,000)
+- ≥5万 (≥ 50,000)
+
+**Supported Periods**:
+- `day`: Single day
+- `last7d`: Rolling 7 days
+- `last30d`: Rolling 30 days
+
+**Returns**:
+```python
+{
+  'period': 'day',
+  'period_label': '当日',
+  'date_range': '2025-11-08',
+  'distribution': [
+    {'range': '<1万', 'count': 15, 'percentage': 37.5},
+    {'range': '1-2万', 'count': 12, 'percentage': 30.0},
+    ...
+  ],
+  'total_staff': 40,
+  'total_premium': 1580000.50
+}
+```
+
+**Use Case**: Identify underperforming staff or high-performers for management action
+
+#### 7. Data Validation (`_validate_staff_mapping`, `_validate_policy_consistency`)
+**Location**: [backend/data_processor.py:952-992](backend/data_processor.py#L952-L992), [771-819](backend/data_processor.py#L771-L819)
+
+**Staff Mapping Validation**:
+- Check if all staff in data exist in mapping file
+- Return list of unmatched staff names
+- Print warnings for unmapped staff (first 10)
+
+**Policy Consistency Validation**:
+- Verify that policy → staff → institution/team chain is consistent
+- Compare data columns (团队, 三级机构) with mapping values
+- Flag policies with mismatched institution/team assignments
+
+**Returns**:
+```python
+{
+  'unmatched_staff': ['姓名1', '姓名2', ...],
+  'unmatched_count': 5,
+  'policy_consistency': {
+    'mismatch_policies': ['保单号1', '保单号2', ...],
+    'mismatch_count': 3
+  }
+}
+```
+
+**When to Alert User**:
+- High `unmatched_count`: Mapping file may be outdated
+- High `mismatch_count`: Data quality issue, investigate source
+
+## Pandas Best Practices for This Dataset
+
+When writing Python analysis code, follow these patterns from `DataProcessor`:
+
+### Date Handling
+```python
+# Always parse with error handling
+df['投保确认时间'] = pd.to_datetime(df['投保确认时间'], errors='coerce')
+
+# Filter by date range (use .date() for comparison)
+mask = (df['投保确认时间'].dt.date >= start_date.date()) & \
+       (df['投保确认时间'].dt.date <= end_date.date())
+```
+
+### Numeric Aggregation with Error Handling
+```python
+def sum_float(series):
+    try:
+        return float(series.sum())
+    except Exception:
+        return 0.0
+```
+
+### Staff Name Extraction (Regex)
+```python
+import re
+match = re.search(r'[\u4e00-\u9fa5]+', staff_key)  # Extract Chinese characters
+if match:
+    name = match.group()
+```
+
+### Weekday Calculation
+```python
+weekday_map = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+weekday_label = weekday_map[date_obj.weekday()]  # Monday=0, Sunday=6
+```
+
+### Missing Value Handling
+```python
+# For string columns
+df = df.fillna('')
+
+# For numeric columns
+df[col] = pd.to_numeric(df[col], errors='coerce')  # Invalid → NaN
+```
+
+### Duplicate Removal
+```python
+# Keep last occurrence (latest data wins)
+df = df.drop_duplicates(subset=['保单号', '投保确认时间'], keep='last')
+```
+
+## Common Pitfalls and Solutions
+
+### Pitfall 1: Using Raw 三级机构 Field
+**Problem**: Raw data may have incorrect institution assignments
+**Solution**: ALWAYS use staff mapping to determine institution
+```python
+# ❌ Wrong
+df[df['三级机构'] == '达州']
+
+# ✅ Correct
+staff_list = [name for key, info in mapping.items()
+              if info['三级机构'] == '达州']
+df[df['业务员'].isin(staff_list)]
+```
+
+### Pitfall 2: Ignoring Negative Premium
+**Problem**: Negative premium represents cancellations/adjustments
+**Solution**: Keep negative values, don't filter them out
+```python
+# ❌ Wrong
+df = df[df['签单/批改保费'] > 0]
+
+# ✅ Correct
+# Include all values, negative premiums are valid business data
+total_premium = df['签单/批改保费'].sum()  # May be negative
+```
+
+### Pitfall 3: Incorrect Weekday Alignment
+**Problem**: Comparing different weekdays across weeks is meaningless
+**Solution**: Use `weekday_index` to align same weekdays
+```python
+# Calculate days since period start
+period_data['weekday_index'] = period_data['投保确认时间'].apply(
+    lambda x: (x.date() - period_start.date()).days
+)
+```
+
+### Pitfall 4: Forgetting to Apply Filters
+**Problem**: KPI calculations without filters show global metrics
+**Solution**: Always apply filters BEFORE aggregation
+```python
+# ✅ Correct order
+df = self._apply_filters(df, filters)  # First
+premium = df['签单/批改保费'].sum()      # Then aggregate
+```
+
+### Pitfall 5: Hardcoding Date Ranges
+**Problem**: Analysis breaks when data range changes
+**Solution**: Use anchor date and relative offsets
+```python
+# ❌ Wrong
+start_date = pd.to_datetime('2025-10-01')
+
+# ✅ Correct
+anchor_date = df['投保确认时间'].max()
+start_date = anchor_date - timedelta(days=29)  # Rolling 30 days
+```
+
+## API Response Format Standards
+
+All KPI endpoints follow this structure:
+
+### Success Response
+```json
+{
+  "status": "success",
+  "data": {
+    "anchor_date": "YYYY-MM-DD",
+    "premium": {...},
+    "validation": {
+      "unmatched_staff": [],
+      "unmatched_count": 0,
+      "policy_consistency": {...}
+    }
+  }
+}
+```
+
+### Error Response
+```json
+{
+  "status": "error",
+  "error": "Error message",
+  "code": "ERROR_CODE"  // Optional
+}
+```
+
+### Validation Warnings
+When `unmatched_count > 0` or `mismatch_count > 0`, frontend should display warnings but still show data
+
 ## Version Information
 
-**Skill Version**: 2.0
-**Last Updated**: 2025-11-06
+**Skill Version**: 3.0
+**Last Updated**: 2025-11-08
 **Mapping Table Version**: 20251104 (229 records)
+
+**Changelog**:
+- v3.0 (2025-11-08): Added comprehensive DataProcessor logic reference, Pandas best practices, common pitfalls
+- v2.0 (2025-11-06): Initial structured skill documentation
+- v1.0: Legacy documentation

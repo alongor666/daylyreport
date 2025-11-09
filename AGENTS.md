@@ -12,7 +12,14 @@
 - `python scripts/check_env.py` 与 `python scripts/read_excel_sample.py data/<file>.xlsx`：文档推荐的环境自检与数据抽样。
 
 ## 编码风格与命名约定
-后端遵循 PEP 8（4 空格缩进、snake_case 函数、ALL_CAPS 常量），关键聚合函数需编写 docstring 并保持纯函数特性，便于未来接入 PyTest。前端按 docs/DESIGN_SYSTEM.md：组件命名用 PascalCase（如 `KpiCard.vue`），props 需显式类型与默认值，事件采用 kebab-case；状态只能通过 Pinia store 更新，禁止全局变量与直接操作 localStorage。样式使用 CSS Variables + BEM，例如 `.kpi-card__value`，不得硬编码颜色或间距。
+后端遵循 PEP 8（4 空格缩进、snake_case 函数、ALL_CAPS 常量），关键聚合函数需编写 docstring 并保持纯函数特性，便于未来接入 PyTest。前端按 docs/DESIGN_SYSTEM.md：组件命名用 PascalCase（如 `KpiCard.vue`），props 需显式类型与默认值，事件采用 kebab-case；状态只能通过 Pinia store 更新，禁止全局变量与直接操作 localStorage。样式使用 CSS Variables + BEM，例如 `.kpi-card__value`，不得硬编码颜色或间距。新设计系统采用护眼配色方案：
+- 主数据 (D): #5B8DEF 柔和蓝，专业感
+- 上周对比 (D-7): #8B95A5 中性灰，辅助信息
+- 前周对比 (D-14): #C5CAD3 浅灰色，背景数据
+- 上升趋势: #52C41A 成功绿，正向鼓励
+- 下降趋势: #F5222D 警示红，提醒注意
+- 持平状态: #8B95A5 中性灰，无变化标识
+标签格式统一为："D (MM-DD): 数值 趋势符号 变化率"
 
 ## 测试与验证准则
 因自动化尚在建设阶段（参见 docs/README_FOR_DEVELOPERS.md），每次变更都要记录手动验证：完成数据脚本抽样、命中 `/health` 与 `/api/filter-options`、在 Vite 开发服或 `static/index.html` 下走通 KPI、筛选与趋势图。新增 PyTest 时以 `tests/backend/test_<module>.py` 命名，覆盖正常路径与缺失列、空数据等异常；UI 变更需附上根据 docs/DESIGN_SYSTEM.md 的截图或录屏验证响应式与配色。

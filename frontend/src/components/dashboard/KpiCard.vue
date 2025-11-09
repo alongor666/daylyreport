@@ -8,21 +8,14 @@
 
     <!-- 正常内容 -->
     <template v-else>
-      <!-- 标题和图标 -->
+      <!-- 标题 -->
       <div class="kpi-card__header">
-        <div class="kpi-card__icon" :style="{ background: iconBg }">
-          {{ icon }}
-        </div>
         <h3 class="kpi-card__title">{{ title }}</h3>
       </div>
 
-      <!-- 主要数值(当日) -->
+      <!-- 主要数值 -->
       <div class="kpi-card__main">
-        <div class="kpi-card__value">{{ formattedMainValue }}</div>
-        <div v-if="trend !== null" :class="['kpi-card__trend', trendClass]">
-          <span class="kpi-card__trend-icon">{{ trendIcon }}</span>
-          <span class="kpi-card__trend-value">{{ formattedTrend }}</span>
-        </div>
+        <div class="kpi-card__value">{{ formattedValue }}</div>
       </div>
 
       <!-- 趋势图 (7天Sparkline) -->
@@ -30,21 +23,6 @@
         <div ref="chartRef" class="kpi-card__chart-canvas"></div>
       </div>
 
-      <!-- 三口径数据 -->
-      <div class="kpi-card__stats">
-        <div class="kpi-card__stat">
-          <span class="kpi-card__stat-label">当日</span>
-          <span class="kpi-card__stat-value">{{ formattedDayValue }}</span>
-        </div>
-        <div class="kpi-card__stat">
-          <span class="kpi-card__stat-label">近7天</span>
-          <span class="kpi-card__stat-value">{{ formatted7dValue }}</span>
-        </div>
-        <div class="kpi-card__stat">
-          <span class="kpi-card__stat-label">近30天</span>
-          <span class="kpi-card__stat-value">{{ formatted30dValue }}</span>
-        </div>
-      </div>
     </template>
   </div>
 </template>
@@ -53,6 +31,7 @@
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { useTheme, useEChartsTheme } from '@/composables/useTheme'
+import { useDataStore } from '@/stores/data'
 
 const props = defineProps({
   // 标题
@@ -70,18 +49,8 @@ const props = defineProps({
     type: String,
     default: 'linear-gradient(135deg, #a855f7, #9333ea)'
   },
-  // 当日数值
-  dayValue: {
-    type: Number,
-    default: 0
-  },
-  // 近7天数值
-  last7dValue: {
-    type: Number,
-    default: 0
-  },
-  // 近30天数值
-  last30dValue: {
+  // 当前数值（根据外部时间段计算好的值）
+  value: {
     type: Number,
     default: 0
   },
@@ -99,7 +68,7 @@ const props = defineProps({
   valueType: {
     type: String,
     default: 'currency',
-    validator: (value) => ['currency', 'number'].includes(value)
+    validator: (value) => ['currency', 'number', 'wanInt', 'percent'].includes(value)
   },
   // 加载状态
   loading: {
@@ -112,15 +81,15 @@ const props = defineProps({
 const theme = useTheme('kpiCard')
 const echartsTheme = useEChartsTheme()
 
+// Stores
+const dataStore = useDataStore()
+
 // Chart
 const chartRef = ref(null)
 let chartInstance = null
 
 // Computed
-const formattedMainValue = computed(() => formatValue(props.dayValue))
-const formattedDayValue = computed(() => formatValue(props.dayValue))
-const formatted7dValue = computed(() => formatValue(props.last7dValue))
-const formatted30dValue = computed(() => formatValue(props.last30dValue))
+const formattedValue = computed(() => formatValue(props.value))
 
 const formattedTrend = computed(() => {
   if (props.trend === null) return ''
@@ -139,14 +108,33 @@ const trendIcon = computed(() => {
 })
 
 // Methods
+/**
+ * 函数：formatValue
+ * 作用：根据 valueType 对 KPI 主值进行格式化展示
+ *  - 'wanInt'：以万元为单位、取整数显示，例如 123456 => 12万元（用于保费/佣金/目标差距等金额型）
+ *  - 'currency'：人民币千分位整数，例如 123456 => ¥123,456
+ *  - 'number'：千分位整数，例如 123456 => 123,456
+ *  - 'percent'：百分比显示（传入 [0,1] 比例），例如 0.376 => 37.6%
+ * 入参：value（数字）
+ * 返回：格式化后的字符串
+ */
 function formatValue(value) {
-  if (props.valueType === 'currency') {
-    // 金额格式化: ¥1,234,567
-    return `¥${value.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}`
-  } else {
-    // 数字格式化: 1,234
-    return value.toLocaleString('zh-CN', { maximumFractionDigits: 0 })
+  const num = Number(value) || 0
+  if (props.valueType === 'percent') {
+    // 函数级中文注释：
+    // 百分比格式化：输入为 [0,1] 的占比，输出为 XX.X%（一位小数）。
+    // 对异常值做保护：<0 按 0 处理，>1 按 1 处理。
+    const clamped = Math.max(0, Math.min(1, num))
+    return `${(clamped * 100).toFixed(1)}%`
   }
+  if (props.valueType === 'wanInt') {
+    const wan = Math.round(num / 10000)
+    return `${wan}万元`
+  }
+  if (props.valueType === 'currency') {
+    return `¥${num.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}`
+  }
+  return num.toLocaleString('zh-CN', { maximumFractionDigits: 0 })
 }
 
 function initChart() {
@@ -312,18 +300,6 @@ watch(
 .kpi-card__header {
   display: flex;
   align-items: center;
-  gap: v-bind('theme.spacing.value.md');
-}
-
-.kpi-card__icon {
-  width: 40px;
-  height: 40px;
-  border-radius: v-bind('theme.radius.value.md');
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
 }
 
 .kpi-card__title {

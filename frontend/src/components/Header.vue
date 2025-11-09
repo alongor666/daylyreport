@@ -13,22 +13,6 @@
 
       <!-- 右侧: 操作区 -->
       <div class="app-header__actions">
-        <!-- 指标切换 -->
-        <div class="metric-switcher">
-          <button
-            v-for="metric in metrics"
-            :key="metric.value"
-            :class="[
-              'metric-switcher__button',
-              { 'metric-switcher__button--active': currentMetric === metric.value }
-            ]"
-            @click="handleMetricSwitch(metric.value)"
-          >
-            <span class="metric-switcher__icon">{{ metric.icon }}</span>
-            <span class="metric-switcher__label">{{ metric.label }}</span>
-          </button>
-        </div>
-
         <!-- 刷新按钮 -->
         <button
           class="refresh-button"
@@ -67,30 +51,10 @@ const toast = useToast()
 // State
 const isRefreshing = ref(false)
 
-// 指标选项
-const metrics = [
-  { value: 'premium', label: '签单保费', icon: '¥' },
-  { value: 'count', label: '签单单量', icon: '#' }
-]
-
 // Computed
-const currentMetric = computed(() => appStore.currentMetric)
 const displayDate = computed(() => appStore.formattedDisplayDate)
 
 // Methods
-const handleMetricSwitch = (metric) => {
-  if (metric === currentMetric.value) return
-
-  appStore.switchMetric(metric)
-
-  // 刷新图表数据
-  dataStore.refreshChartData().catch((error) => {
-    toast.error('切换指标失败', error.message)
-  })
-
-  toast.info(`已切换到${metrics.find(m => m.value === metric)?.label}`)
-}
-
 const handleRefresh = async () => {
   if (isRefreshing.value) return
 
@@ -174,47 +138,7 @@ const handleRefresh = async () => {
   gap: v-bind('theme.spacing.value.lg');
 }
 
-/* 指标切换器 */
-.metric-switcher {
-  display: flex;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.03);
-  padding: 4px;
-  border-radius: v-bind('theme.radius.value.md');
-}
 
-.metric-switcher__button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  color: v-bind('theme.colors.value.textSecondary');
-  font-size: v-bind('theme.typography.value.sm');
-  font-weight: 500;
-  border-radius: calc(v-bind('theme.radius.value.md') - 2px);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-family: v-bind('theme.typography.value.fontFamily');
-}
-
-.metric-switcher__button:hover:not(.metric-switcher__button--active) {
-  background: rgba(0, 0, 0, 0.04);
-  color: v-bind('theme.colors.value.textPrimary');
-}
-
-.metric-switcher__button--active {
-  background: white;
-  color: v-bind('theme.colors.value.primary');
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  font-weight: 600;
-}
-
-.metric-switcher__icon {
-  font-size: 14px;
-  font-weight: 700;
-}
 
 /* 刷新按钮 */
 .refresh-button {

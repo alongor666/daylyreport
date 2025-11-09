@@ -1,0 +1,66 @@
+{
+  "name": "web-theme-system-simple",
+  "version": "2.0.0",
+  "description": "轻量级网页端跨操作系统主题系统 - 护眼+暗黑双模式",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "format": "prettier --write src/",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "vue": "^3.4.21",
+    "pinia": "^2.1.7"
+  },
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.8.0",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^20.12.5",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/eslint-config-prettier": "^9.0.0",
+    "@vue/eslint-config-typescript": "^13.0.0",
+    "@vue/tsconfig": "^0.5.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.23.0",
+    "prettier": "^3.2.5",
+    "typescript": "~5.4.0",
+    "vite": "^5.2.8",
+    "vitest": "^1.4.0",
+    "vue-tsc": "^2.0.11"
+  },
+  "packageManager": "npm@10.5.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ],
+  "keywords": [
+    "theme",
+    "dark-mode",
+    "eye-care",
+    "cross-os",
+    "vue",
+    "lightweight",
+    "accessibility"
+  ],
+  "author": "Theme System Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/web-theme-system-simple.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/web-theme-system-simple/issues"
+  },
+  "homepage": "https://github.com/your-org/web-theme-system-simple#readme"
+}

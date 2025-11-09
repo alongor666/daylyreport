@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图表双视图测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #666;
+            margin: 0;
+        }
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .demo-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 15px;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            color: #6b7280;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list li::before {
+            content: "✓";
+            color: #52c41a;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+        .status.success {
+            background: #f0f9ff;
+            color: #0891b2;
+            border: 1px solid #0891b2;
+        }
+        .navigation {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .nav-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #5b8def;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .nav-button:hover {
+            background: #4a7bd8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 签单保费周对比图表升级</h1>
+            <p>双视图切换功能已成功实现</p>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title">🎯 新增功能特性</h2>
+            <ul class="feature-list">
+                <li>双视图切换：柱状图 ↔ 折线图 <span class="status success">已完成</span></li>
+                <li>图表类型切换控件：📊 柱状图 / 📈 折线图 <span class="status success">已完成</span></li>
+                <li>折线图平滑曲线与标记点 <span class="status success">已完成</span></li>
+                <li>最新周期（D）特殊高亮显示 <span class="status success">已完成</span></li>
+                <li>保持原有tooltip详细对比功能 <span class="status success">已完成</span></li>
+                <li>护眼配色方案完整保留 <span class="status success">已完成</span></li>
+                <li>响应式设计适配移动端 <span class="status success">已完成</span></li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title">🎨 视觉设计特色</h2>
+            <ul class="feature-list">
+                <li>折线图区域填充（仅最新周期）</li>
+                <li>平滑曲线过渡效果</li>
+                <li>标记点大小区分周期重要性</li>
+                <li>悬停交互强化视觉效果</li>
+                <li>与现有设计系统完美整合</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title">⚡ 技术实现</h2>
+            <ul class="feature-list">
+                <li>ECharts双类型图表支持</li>
+                <li>Vue 3 组合式API</li>
+                <li>Pinia状态管理集成</li>
+                <li>组件化架构设计</li>
+                <li>性能优化与防抖处理</li>
+            </ul>
+        </div>
+
+        <div class="navigation">
+            <a href="/static/index.html" class="nav-button">🚀 查看实际效果</a>
+        </div>
+    </div>
+</body>
+</html>
